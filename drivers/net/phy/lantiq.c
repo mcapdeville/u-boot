@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  *
- * Copyright 2011 Freescale Semiconductor, Inc.
+ * Copyright 2013 Instrumentation Technologies d.d.
  * author Tomaž Beltram
  *
  */
