@@ -23,12 +23,22 @@
 
 #include <phy.h>
 
+/* internal address space */
 #define MMD_DEVAD_INT 0x1f
 #define MMD_ACTYPE_DATA 0x4000
 
+/* LED configuration registers */
+#define INT_LED1H 0x1e4
 #define INT_LED1L 0x1e5
+#define INT_LED2H 0x1e6
+#define INT_LED2L 0x1e7
+
+/* LED function bits */
 #define INT_LED_TX 0x01
 #define INT_LED_RX 0x02
+#define INT_LED_LINK10 0x1
+#define INT_LED_LINK100 0x2
+#define INT_LED_LINK1000 0x4
 
 void phy_mmd_write(struct phy_device *phydev, int devad, int addr, int val)
 {
@@ -40,8 +50,13 @@ void phy_mmd_write(struct phy_device *phydev, int devad, int addr, int val)
 
 static int phy11g_config(struct phy_device *phydev)
 {
-	printf("phy11g_config()\n");
-	phy_mmd_write(phydev, MMD_DEVAD_INT, INT_LED1L, INT_LED_RX | INT_LED_TX);
+	phy_mmd_write(phydev, MMD_DEVAD_INT, INT_LED1H, 0);
+	phy_mmd_write(phydev, MMD_DEVAD_INT, INT_LED1L,
+		INT_LED_RX | INT_LED_TX);
+	phy_mmd_write(phydev, MMD_DEVAD_INT, INT_LED2H,
+		INT_LED_LINK1000 << 4 | INT_LED_LINK100);
+	phy_mmd_write(phydev, MMD_DEVAD_INT, INT_LED2L,
+		INT_LED_LINK10);
 
 	return 0;
 }
