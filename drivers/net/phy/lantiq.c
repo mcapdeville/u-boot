@@ -56,7 +56,7 @@ static int phy11g_config(struct phy_device *phydev)
 	phy_mmd_write(phydev, MMD_DEVAD_INT, INT_LED2H,
 		INT_LED_LINK1000 << 4 | INT_LED_LINK100);
 	phy_mmd_write(phydev, MMD_DEVAD_INT, INT_LED2L,
-		INT_LED_LINK10);
+		INT_LED_LINK10 << 4);
 
 	return 0;
 }
