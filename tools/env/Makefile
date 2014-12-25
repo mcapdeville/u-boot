@@ -5,6 +5,10 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
+# Versioning system
+RP_VERSION ?= 0.00-0000
+RP_REVISION ?= devbuild
+
 # fw_printenv is supposed to run on the target system, which means it should be
 # built with cross tools. Although it may look weird, we only replace "HOSTCC"
 # with "CC" here for the maximum code reuse of scripts/Makefile.host.
@@ -15,6 +19,8 @@ HOST_EXTRACFLAGS  = $(patsubst -I%,-idirafter%, $(UBOOTINCLUDE)) \
 		-idirafter $(srctree)/tools/env \
 		-DUSE_HOSTCC \
 		-DTEXT_BASE=$(TEXT_BASE)
+
+HOSTCPPFLAGS += -DRP_VERSION=$(RP_VERSION) -DRP_REVISION=$(RP_REVISION)
 
 ifeq ($(MTD_VERSION),old)
 HOST_EXTRACFLAGS += -DMTD_OLD

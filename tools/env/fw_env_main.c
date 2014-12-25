@@ -35,6 +35,7 @@
 #include <sys/file.h>
 #include <unistd.h>
 #include "fw_env.h"
+#include "version.h"
 
 #define	CMD_PRINTENV	"fw_printenv"
 #define CMD_SETENV	"fw_setenv"
@@ -49,7 +50,8 @@ void usage(void)
 {
 
 	fprintf(stderr, "fw_printenv/fw_setenv, "
-		"a command line interface to U-Boot environment\n\n"
+		"a command line interface to U-Boot environment\n"
+		"version %s-%s\n\n"
 		"usage:\tfw_printenv [-a key] [-n] [variable name]\n"
 		"\tfw_setenv [-a key] [variable name] [variable value]\n"
 		"\tfw_setenv -s [ file ]\n"
@@ -68,7 +70,8 @@ void usage(void)
 		"A variable without value will be dropped. It is possible\n"
 		"to put any number of spaces between the fields, but any\n"
 		"space inside the value is treated as part of the value "
-		"itself.\n\n"
+		"itself.\n\n",
+		VERSION_STR, REVISION_STR
 	);
 }
 
