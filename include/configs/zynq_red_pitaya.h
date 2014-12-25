@@ -68,9 +68,13 @@
 #define CONFIG_ENV_IS_IN_EEPROM
 #define CONFIG_ENV_EEPROM_IS_ON_I2C
 
+#undef CONFIG_ENV_OFFSET
 #define CONFIG_ENV_OFFSET           (2048*3) /* WP area starts at last 1/4 of 8k eeprom */
+#undef CONFIG_ENV_SIZE
 #define CONFIG_ENV_SIZE             1024 /* Total Size of Environment Sector */
+#undef CONFIG_ENV_SECT_SIZE
 #define CONFIG_ENV_SECT_SIZE        CONFIG_ENV_SIZE
+#undef CONFIG_CMD_SAVEENV
 #define CONFIG_CMD_SAVEENV         /* Command to save ENV to Flash */
 
 #undef CONFIG_SYS_MEMTEST_END
