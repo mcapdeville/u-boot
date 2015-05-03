@@ -8,21 +8,11 @@
 # core
 ifndef CONFIG_SPL_BUILD
 obj-y += main.o
-obj-y += command.o
 obj-y += exports.o
 obj-y += hash.o
 ifdef CONFIG_SYS_HUSH_PARSER
 obj-y += cli_hush.o
 endif
-
-# We always have this since drivers/ddr/fs/interactive.c needs it
-obj-y += cli_simple.o
-
-obj-y += cli.o
-obj-y += cli_readline.o
-obj-y += s_record.o
-obj-y += xyzModem.o
-obj-y += cmd_disk.o
 
 # This option is not just y/n - it can have a numeric value
 ifdef CONFIG_BOOTDELAY
@@ -37,6 +27,8 @@ endif
 # boards
 obj-$(CONFIG_SYS_GENERIC_BOARD) += board_f.o
 obj-$(CONFIG_SYS_GENERIC_BOARD) += board_r.o
+obj-$(CONFIG_DISPLAY_BOARDINFO) += board_info.o
+obj-$(CONFIG_DISPLAY_BOARDINFO_LATE) += board_info.o
 
 # core command
 obj-y += cmd_boot.o
@@ -68,6 +60,7 @@ obj-$(CONFIG_ENV_IS_NOWHERE) += env_nowhere.o
 # command
 obj-$(CONFIG_CMD_AES) += cmd_aes.o
 obj-$(CONFIG_CMD_AMBAPP) += cmd_ambapp.o
+obj-$(CONFIG_CMD_ARMFLASH) += cmd_armflash.o
 obj-$(CONFIG_SOURCE) += cmd_source.o
 obj-$(CONFIG_CMD_SOURCE) += cmd_source.o
 obj-$(CONFIG_CMD_BDI) += cmd_bdinfo.o
@@ -188,6 +181,7 @@ obj-y += usb.o usb_hub.o
 obj-$(CONFIG_USB_STORAGE) += usb_storage.o
 endif
 obj-$(CONFIG_CMD_FASTBOOT) += cmd_fastboot.o
+obj-$(CONFIG_CMD_FS_UUID) += cmd_fs_uuid.o
 
 obj-$(CONFIG_CMD_USB_MASS_STORAGE) += cmd_usb_mass_storage.o
 obj-$(CONFIG_CMD_THOR_DOWNLOAD) += cmd_thordown.o
@@ -206,7 +200,9 @@ obj-$(CONFIG_CMD_KGDB) += kgdb.o kgdb_stubs.o
 obj-$(CONFIG_I2C_EDID) += edid.o
 obj-$(CONFIG_KALLSYMS) += kallsyms.o
 obj-y += splash.o
-obj-$(CONFIG_LCD) += lcd.o
+obj-$(CONFIG_SPLASH_SOURCE) += splash_source.o
+obj-$(CONFIG_LCD) += lcd.o lcd_console.o
+obj-$(CONFIG_LCD_DT_SIMPLEFB) += lcd_simplefb.o
 obj-$(CONFIG_LYNXKDI) += lynxkdi.o
 obj-$(CONFIG_MENU) += menu.o
 obj-$(CONFIG_MODEM_SUPPORT) += modem.o
@@ -220,10 +216,6 @@ ifdef CONFIG_SPL_BUILD
 obj-$(CONFIG_ENV_IS_IN_FLASH) += env_flash.o
 obj-$(CONFIG_SPL_YMODEM_SUPPORT) += xyzModem.o
 obj-$(CONFIG_SPL_NET_SUPPORT) += miiphyutil.o
-# environment
-obj-$(CONFIG_SPL_ENV_SUPPORT) += env_attr.o
-obj-$(CONFIG_SPL_ENV_SUPPORT) += env_flags.o
-obj-$(CONFIG_SPL_ENV_SUPPORT) += env_callback.o
 ifdef CONFIG_SPL_USB_HOST_SUPPORT
 obj-$(CONFIG_SPL_USB_SUPPORT) += usb.o usb_hub.o
 obj-$(CONFIG_USB_STORAGE) += usb_storage.o
@@ -231,14 +223,17 @@ endif
 ifdef CONFIG_SPL_SATA_SUPPORT
 obj-$(CONFIG_CMD_SCSI) += cmd_scsi.o
 endif
-ifneq ($(CONFIG_SPL_NET_SUPPORT),y)
+# environment
+ifdef CONFIG_SPL_ENV_SUPPORT
+obj-$(CONFIG_SPL_ENV_SUPPORT) += env_attr.o
+obj-$(CONFIG_SPL_ENV_SUPPORT) += env_flags.o
+obj-$(CONFIG_SPL_ENV_SUPPORT) += env_callback.o
 obj-$(CONFIG_ENV_IS_NOWHERE) += env_nowhere.o
 obj-$(CONFIG_ENV_IS_IN_MMC) += env_mmc.o
+obj-$(CONFIG_ENV_IS_IN_FAT) += env_fat.o
 obj-$(CONFIG_ENV_IS_IN_NAND) += env_nand.o
 obj-$(CONFIG_ENV_IS_IN_SPI_FLASH) += env_sf.o
 obj-$(CONFIG_ENV_IS_IN_FLASH) += env_flash.o
-else
-obj-y += env_nowhere.o
 endif
 endif
 # core command
@@ -246,18 +241,16 @@ obj-y += cmd_nvedit.o
 #environment
 obj-y += env_common.o
 #others
-ifdef CONFIG_DDR_SPD
-SPD := y
-endif
-ifdef CONFIG_SPD_EEPROM
-SPD := y
-endif
-obj-$(SPD) += ddr_spd.o
+obj-$(CONFIG_DDR_SPD) += ddr_spd.o
+obj-$(CONFIG_SPD_EEPROM) += ddr_spd.o
 obj-$(CONFIG_HWCONFIG) += hwconfig.o
 obj-$(CONFIG_BOUNCE_BUFFER) += bouncebuf.o
 obj-y += console.o
 obj-$(CONFIG_CROS_EC) += cros_ec.o
 obj-y += dlmalloc.o
+ifdef CONFIG_SYS_MALLOC_F_LEN
+obj-y += malloc_simple.o
+endif
 obj-y += image.o
 obj-$(CONFIG_ANDROID_BOOT_IMAGE) += image-android.o
 obj-$(CONFIG_OF_LIBFDT) += image-fdt.o
@@ -266,5 +259,23 @@ obj-$(CONFIG_FIT_SIGNATURE) += image-sig.o
 obj-$(CONFIG_IO_TRACE) += iotrace.o
 obj-y += memsize.o
 obj-y += stdio.o
+
+# This option is not just y/n - it can have a numeric value
+ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
+obj-y += aboot.o
+obj-y += fb_mmc.o
+endif
+
+obj-$(CONFIG_CMD_BLOB) += cmd_blob.o
+
+# We always have this since drivers/ddr/fs/interactive.c needs it
+obj-y += cli_simple.o
+
+obj-y += cli.o
+obj-y += cli_readline.o
+obj-y += command.o
+obj-y += s_record.o
+obj-y += xyzModem.o
+obj-y += cmd_disk.o
 
 CFLAGS_env_embedded.o := -Wa,--no-warn -DENV_CRC=$(shell tools/envcrc 2>/dev/null)

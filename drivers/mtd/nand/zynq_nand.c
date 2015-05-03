@@ -11,6 +11,7 @@
 #include <malloc.h>
 #include <asm/io.h>
 #include <asm/errno.h>
+#include <nand.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/partitions.h>
@@ -72,6 +73,9 @@
 /* ECC block registers bit position and bit mask */
 #define ZYNQ_NAND_ECC_BUSY	(1 << 6)	/* ECC block is busy */
 #define ZYNQ_NAND_ECC_MASK	0x00FFFFFF	/* ECC value mask */
+
+#define ZYNQ_NAND_ROW_ADDR_CYCL_MASK	0x0F
+#define ZYNQ_NAND_COL_ADDR_CYCL_MASK	0xF0
 
 /* NAND MIO buswidth count*/
 #define ZYNQ_NAND_MIO_NUM_NAND_8BIT	13
@@ -484,15 +488,15 @@ static int zynq_nand_read_page_raw_nooob(struct mtd_info *mtd,
 }
 
 static int zynq_nand_read_subpage_raw(struct mtd_info *mtd,
-				    struct nand_chip *chip, u32 data_offs,
-				    u32 readlen, u8 *buf)
+				    struct nand_chip *chip, uint32_t offs,
+				    uint32_t len, uint8_t *buf, int page)
 {
-	if (data_offs != 0) {
-		chip->cmdfunc(mtd, NAND_CMD_RNDOUT, data_offs, -1);
-		buf += data_offs;
+	if (offs != 0) {
+		chip->cmdfunc(mtd, NAND_CMD_RNDOUT, offs, -1);
+		buf += offs;
 	}
 
-	chip->read_buf(mtd, buf, readlen);
+	chip->read_buf(mtd, buf, len);
 	return 0;
 }
 
@@ -759,6 +763,7 @@ static void zynq_nand_cmd_function(struct mtd_info *mtd, unsigned int command,
 {
 	struct nand_chip *chip = mtd->priv;
 	const struct zynq_nand_command_format *curr_cmd = NULL;
+	u8 addr_cycles = 0;
 	struct zynq_nand_info *xnand;
 	void *cmd_addr;
 	unsigned long cmd_data = 0;
@@ -808,8 +813,18 @@ static void zynq_nand_cmd_function(struct mtd_info *mtd, unsigned int command,
 	else
 		end_cmd = curr_cmd->end_cmd;
 
+	if ((command == NAND_CMD_READ0) ||
+            (command == NAND_CMD_SEQIN)) {
+		addr_cycles = chip->onfi_params.addr_cycles &
+				ZYNQ_NAND_ROW_ADDR_CYCL_MASK;
+		addr_cycles += ((chip->onfi_params.addr_cycles &
+				ZYNQ_NAND_COL_ADDR_CYCL_MASK) >> 4);
+	} else {
+		addr_cycles = curr_cmd->addr_cycles;
+	}
+
 	cmd_phase_addr = (unsigned long)xnand->nand_base	|
-			(curr_cmd->addr_cycles << ADDR_CYCLES_SHIFT)	|
+			(addr_cycles << ADDR_CYCLES_SHIFT)	|
 			(end_cmd_valid << END_CMD_VALID_SHIFT)		|
 			(COMMAND_PHASE)					|
 			(end_cmd << END_CMD_SHIFT)			|
@@ -1235,7 +1250,6 @@ static int zynq_nand_init(struct nand_chip *nand_chip, int devnum)
 
 	return 0;
 fail:
-	nand_release(mtd);
 free:
 	kfree(xnand);
 	return err;

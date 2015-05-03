@@ -73,17 +73,21 @@ void invalidate_dcache_all(void)
 	__asm_invalidate_dcache_all();
 }
 
-void __weak flush_l3_cache(void)
-{
-}
-
 /*
- * Performs a clean & invalidation of the entire data cache at all levels
+ * Performs a clean & invalidation of the entire data cache at all levels.
+ * This function needs to be inline to avoid using stack.
+ * __asm_flush_l3_cache return status of timeout
  */
-void flush_dcache_all(void)
+inline void flush_dcache_all(void)
 {
+	int ret;
+
 	__asm_flush_dcache_all();
-	flush_l3_cache();
+	ret = __asm_flush_l3_cache();
+	if (ret)
+		debug("flushing dcache returns 0x%x\n", ret);
+	else
+		debug("flushing dcache successfully.\n");
 }
 
 /*
@@ -135,6 +139,24 @@ int dcache_status(void)
 	return (get_sctlr() & CR_C) != 0;
 }
 
+void mmu_set_region_dcache_behaviour(phys_addr_t start, size_t size,
+				     enum dcache_option option)
+{
+	/* get the level2_table0 start address */
+	u64 *page_table = (u64 *)(gd->arch.tlb_addr + 0x3000);
+	u64 upto, end;
+
+	end = ALIGN(start + size, (1 << MMU_SECTION_SHIFT)) >>
+	      MMU_SECTION_SHIFT;
+	start = start >> MMU_SECTION_SHIFT;
+	for (upto = start; upto < end; upto++) {
+		page_table[upto] &= ~PMD_ATTRINDX_MASK;
+		page_table[upto] |= PMD_ATTRINDX(option);
+	}
+
+	flush_dcache_range(page_table[start], page_table[end]);
+	__asm_invalidate_tlb_all();
+}
 #else	/* CONFIG_SYS_DCACHE_OFF */
 
 void invalidate_dcache_all(void)
@@ -164,6 +186,11 @@ void dcache_disable(void)
 int dcache_status(void)
 {
 	return 0;
+}
+
+void mmu_set_region_dcache_behaviour(phys_addr_t start, size_t size,
+				     enum dcache_option option)
+{
 }
 
 #endif	/* CONFIG_SYS_DCACHE_OFF */

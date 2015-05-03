@@ -64,7 +64,7 @@ static int nand_block_op(enum dfu_op op, struct dfu_entity *dfu,
 			return ret;
 		/* then write */
 		ret = nand_write_skip_bad(nand, start, &count, &actual,
-				lim, buf, 0);
+				lim, buf, WITH_WR_VERIFY);
 	}
 
 	if (ret != 0) {
@@ -179,7 +179,7 @@ unsigned int dfu_polltimeout_nand(struct dfu_entity *dfu)
 	return DFU_DEFAULT_POLL_TIMEOUT;
 }
 
-int dfu_fill_entity_nand(struct dfu_entity *dfu, char *s)
+int dfu_fill_entity_nand(struct dfu_entity *dfu, char *devstr, char *s)
 {
 	char *st;
 	int ret, dev, part;

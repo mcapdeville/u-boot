@@ -10,9 +10,10 @@
 #ifndef __CONFIG_ZYNQ_COMMON_H
 #define __CONFIG_ZYNQ_COMMON_H
 
-/* High Level configuration Options */
-#define CONFIG_ARMV7
-#define CONFIG_ZYNQ
+/* CPU clock */
+#ifndef CONFIG_CPU_FREQ_HZ
+# define CONFIG_CPU_FREQ_HZ	800000000
+#endif
 
 /* Cache options */
 #define CONFIG_CMD_CACHE
@@ -20,15 +21,23 @@
 
 #define CONFIG_SYS_L2CACHE_OFF
 #ifndef CONFIG_SYS_L2CACHE_OFF
-#define CONFIG_SYS_L2_PL310
-#define CONFIG_SYS_PL310_BASE	0xf8f02000
+# define CONFIG_SYS_L2_PL310
+# define CONFIG_SYS_PL310_BASE		0xf8f02000
 #endif
 
+#define ZYNQ_SCUTIMER_BASEADDR		0xF8F00600
+#define CONFIG_SYS_TIMERBASE		ZYNQ_SCUTIMER_BASEADDR
+#define CONFIG_SYS_TIMER_COUNTS_DOWN
+#define CONFIG_SYS_TIMER_COUNTER	(CONFIG_SYS_TIMERBASE + 0x4)
+
 /* Serial drivers */
-#define CONFIG_BAUDRATE			115200
+#define CONFIG_BAUDRATE		115200
 /* The following table includes the supported baudrates */
 #define CONFIG_SYS_BAUDRATE_TABLE  \
 	{300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400}
+
+#define CONFIG_ZYNQ_GPIO
+#define CONFIG_CMD_GPIO
 
 /* DCC driver */
 #if defined(CONFIG_ZYNQ_DCC)
@@ -49,6 +58,10 @@
 # define CONFIG_PHYLIB
 # define CONFIG_PHY_LANTIQ
 # define CONFIG_SYS_ENET
+# define CONFIG_BOOTP_SERVERIP
+# define CONFIG_BOOTP_BOOTPATH
+# define CONFIG_BOOTP_GATEWAY
+# define CONFIG_BOOTP_HOSTNAME
 # define CONFIG_BOOTP_MAY_FAIL
 # if !defined(CONFIG_ZYNQ_GEM_EMIO0)
 #  define CONFIG_ZYNQ_GEM_EMIO0	0
@@ -153,7 +166,7 @@
 # define DFU_ALT_INFO
 #endif
 
-#if defined (CONFIG_ZYNQ_SDHCI) || defined(CONFIG_ZYNQ_USB)
+#if defined(CONFIG_ZYNQ_SDHCI) || defined(CONFIG_ZYNQ_USB)
 # define CONFIG_SUPPORT_VFAT
 # define CONFIG_CMD_FAT
 # define CONFIG_CMD_EXT2
@@ -172,6 +185,7 @@
 # define CONFIG_SPI_FLASH_SPANSION
 # define CONFIG_SPI_FLASH_STMICRO
 # define CONFIG_SPI_FLASH_WINBOND
+# define CONFIG_SPI_FLASH_ISSI
 # define CONFIG_CMD_SPI
 # define CONFIG_CMD_SF
 # define CONFIG_SF_DUAL_FLASH
@@ -237,6 +251,7 @@
 #endif
 
 /* Default environment */
+#define CONFIG_PREBOOT
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	"ethaddr=00:26:33:14:50:00\0"	\
 	"kernel_image=uImage\0"	\
@@ -259,6 +274,12 @@
 	"loadbootenv=load mmc 0 ${loadbootenv_addr} ${bootenv}\0" \
 	"importbootenv=echo Importing environment from SD ...; " \
 		"env import -t ${loadbootenv_addr} $filesize\0" \
+	"sd_uEnvtxt_existence_test=test -e mmc 0 /uEnv.txt\0" \
+	"preboot=if test $modeboot = sdboot && env run sd_uEnvtxt_existence_test; " \
+			"then if env run loadbootenv; " \
+				"then env run importbootenv; " \
+			"fi; " \
+		"fi; \0" \
 	"mmc_loadbit=echo Loading bitstream from SD/MMC/eMMC to RAM.. && " \
 		"mmcinfo && " \
 		"load mmc 0 ${loadbit_addr} ${bitstream_image} && " \
@@ -403,9 +424,10 @@
 #define CONFIG_OF_LIBFDT
 
 /* FIT support */
-#define CONFIG_FIT
-#define CONFIG_FIT_VERBOSE	1 /* enable fit_format_{error,warning}() */
 #define CONFIG_IMAGE_FORMAT_LEGACY /* enable also legacy image format */
+
+/* FDT support */
+#define CONFIG_DISPLAY_BOARDINFO_LATE
 
 /* Extend size of kernel image for uncompression */
 #define CONFIG_SYS_BOOTM_LEN	(60 * 1024 * 1024)
@@ -433,7 +455,9 @@
 #endif
 
 #if defined(CONFIG_CMD_ZYNQ_RSA)
-#define CONFIG_RSA
+# ifndef CONFIG_RSA
+#  define CONFIG_RSA
+# endif
 #define CONFIG_SHA256
 #define CONFIG_CMD_ZYNQ_AES
 #endif
@@ -450,7 +474,6 @@
 #endif
 
 /* SPL part */
-#define CONFIG_SPL
 #define CONFIG_CMD_SPL
 #define CONFIG_SPL_FRAMEWORK
 #define CONFIG_SPL_LIBCOMMON_SUPPORT
@@ -475,21 +498,16 @@
 #define CONFIG_SPL_MMC_SUPPORT
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR 0x300 /* address 0x60000 */
 #define CONFIG_SYS_U_BOOT_MAX_SIZE_SECTORS      0x200 /* 256 KB */
-#define CONFIG_SYS_MMC_SD_FAT_BOOT_PARTITION    1
+#define CONFIG_SYS_MMCSD_FS_BOOT_PARTITION     1
 #define CONFIG_SPL_LIBDISK_SUPPORT
 #define CONFIG_SPL_FAT_SUPPORT
-#if defined(CONFIG_OF_CONTROL) && defined(CONFIG_OF_SEPARATE)
-# define CONFIG_SPL_FAT_LOAD_PAYLOAD_NAME     "u-boot-dtb.img"
-#else
-# define CONFIG_SPL_FAT_LOAD_PAYLOAD_NAME     "u-boot.img"
-#endif
+#define CONFIG_SPL_FS_LOAD_PAYLOAD_NAME     "u-boot-dtb.img"
 #endif
 
 /* Disable dcache for SPL just for sure */
 #ifdef CONFIG_SPL_BUILD
 #define CONFIG_SYS_DCACHE_OFF
 #undef CONFIG_FPGA
-#undef CONFIG_OF_CONTROL
 #endif
 
 /* Address in RAM where the parameters must be copied by SPL. */
@@ -497,8 +515,8 @@
 #define CONFIG_SYS_SPI_ARGS_OFFS	0 /* FIXME */
 #define CONFIG_SYS_SPI_ARGS_SIZE	0 /* FIXME */
 
-#define CONFIG_SPL_FAT_LOAD_ARGS_NAME		"system.dtb"
-#define CONFIG_SPL_FAT_LOAD_KERNEL_NAME		"uImage"
+#define CONFIG_SPL_FS_LOAD_ARGS_NAME		"system.dtb"
+#define CONFIG_SPL_FS_LOAD_KERNEL_NAME		"uImage"
 
 /* Not using MMC raw mode - just for compilation purpose */
 #define CONFIG_SYS_MMCSD_RAW_MODE_ARGS_SECTOR	0
@@ -510,9 +528,7 @@
 #define CONFIG_SPL_SPI_SUPPORT
 #define CONFIG_SPL_SPI_LOAD
 #define CONFIG_SPL_SPI_FLASH_SUPPORT
-#define CONFIG_SPL_SPI_BUS	0
-#define CONFIG_SYS_SPI_U_BOOT_OFFS	0x80000
-#define CONFIG_SPL_SPI_CS	0
+#define CONFIG_SYS_SPI_U_BOOT_OFFS	0x100000
 #endif
 
 #ifdef DEBUG

@@ -27,6 +27,7 @@ struct rsa_public_key {
 	uint32_t n0inv;		/* -1 / modulus[0] mod 2^32 */
 	uint32_t *modulus;	/* modulus as little endian array */
 	uint32_t *rr;		/* R^2 as little endian array */
+	uint64_t exponent;	/* public exponent */
 };
 
 #if IMAGE_ENABLE_SIGN
@@ -103,8 +104,6 @@ static inline int rsa_verify(struct image_sign_info *info,
 	return -ENXIO;
 }
 #endif
-
-int zynq_pow_mod(uint32_t *keyptr, uint32_t *inout);
 
 #define RSA2048_BYTES	(2048 / 8)
 #define RSA4096_BYTES	(4096 / 8)

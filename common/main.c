@@ -17,8 +17,7 @@ DECLARE_GLOBAL_DATA_PTR;
 /*
  * Board-specific Platform code can reimplement show_boot_progress () if needed
  */
-void inline __show_boot_progress (int val) {}
-void show_boot_progress (int val) __attribute__((weak, alias("__show_boot_progress")));
+__weak void show_boot_progress(int val) {}
 
 static void modem_init(void)
 {
@@ -59,6 +58,12 @@ void main_loop(void)
 	const char *s;
 
 	bootstage_mark_name(BOOTSTAGE_ID_MAIN_LOOP, "main_loop");
+
+#ifndef CONFIG_SYS_GENERIC_BOARD
+	puts("Warning: Your board does not use generic board. Please read\n");
+	puts("doc/README.generic-board and take action. Boards not\n");
+	puts("upgraded by the late 2014 may break or be removed.\n");
+#endif
 
 	modem_init();
 #ifdef CONFIG_VERSION_VARIABLE

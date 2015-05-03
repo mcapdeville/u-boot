@@ -8,7 +8,7 @@
 
 #include <asm/io.h>
 #include <asm/arch/hardware.h>
-#include <asm/arch/spl.h>
+#include <asm/spl.h>
 #include <asm/arch/sys_proto.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -19,9 +19,6 @@ void board_init_f(ulong dummy)
 
 	/* Clear the BSS. */
 	memset(__bss_start, 0, __bss_end - __bss_start);
-
-	/* Set global data pointer. */
-	gd = &gdata;
 
 	preloader_console_init();
 	arch_cpu_init();
@@ -72,7 +69,7 @@ u32 spl_boot_device(void)
 #ifdef CONFIG_SPL_MMC_SUPPORT
 u32 spl_boot_mode(void)
 {
-	return MMCSD_MODE_FAT;
+	return MMCSD_MODE_FS;
 }
 #endif
 

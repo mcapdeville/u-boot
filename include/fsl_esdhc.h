@@ -108,6 +108,7 @@
 #define XFERTYP_RSPTYP_48_BUSY	0x00030000
 #define XFERTYP_MSBSEL		0x00000020
 #define XFERTYP_DTDSEL		0x00000010
+#define XFERTYP_DDREN		0x00000008
 #define XFERTYP_AC12EN		0x00000004
 #define XFERTYP_BCEN		0x00000002
 #define XFERTYP_DMAEN		0x00000001
@@ -154,6 +155,8 @@
 #define ESDHC_HOSTCAPBLT_DMAS	0x00400000
 #define ESDHC_HOSTCAPBLT_HSS	0x00200000
 
+#define ESDHC_VENDORSPEC_VSELECT 0x00000002 /* Use 1.8V */
+
 struct fsl_esdhc_cfg {
 	u32	esdhc_base;
 	u32	sdhc_clk;
@@ -162,7 +165,19 @@ struct fsl_esdhc_cfg {
 };
 
 /* Select the correct accessors depending on endianess */
-#if __BYTE_ORDER == __LITTLE_ENDIAN
+#if defined CONFIG_SYS_FSL_ESDHC_LE
+#define esdhc_read32		in_le32
+#define esdhc_write32		out_le32
+#define esdhc_clrsetbits32	clrsetbits_le32
+#define esdhc_clrbits32		clrbits_le32
+#define esdhc_setbits32		setbits_le32
+#elif defined(CONFIG_SYS_FSL_ESDHC_BE)
+#define esdhc_read32            in_be32
+#define esdhc_write32           out_be32
+#define esdhc_clrsetbits32      clrsetbits_be32
+#define esdhc_clrbits32         clrbits_be32
+#define esdhc_setbits32         setbits_be32
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
 #define esdhc_read32		in_le32
 #define esdhc_write32		out_le32
 #define esdhc_clrsetbits32	clrsetbits_le32
